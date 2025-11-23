@@ -1,3 +1,4 @@
 *.pdf
 !./sync/*.pdf
-
+errors.txt
+__pycache__

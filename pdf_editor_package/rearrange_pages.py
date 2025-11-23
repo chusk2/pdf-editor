@@ -4,7 +4,7 @@ from pdf_editor_package.check_interval import check_interval
 
 
 # reorder pages
-def reorder_pages(file, start, end, relative_pos , new_pos):
+def rearrange_pages(file: str, start: int, end: int, relative_pos: str , new_pos: int, output_dir='./output'):
     
     if relative_pos not in ['after', 'before']:
         print("Invalid relative position value. Use 'before' or 'after'.")
@@ -73,6 +73,8 @@ def reorder_pages(file, start, end, relative_pos , new_pos):
                     writer.add_page(pages[i])
             
     # write the output file
-    filename = Path(file).name
-    with open(f'./output/{filename}_reordered.pdf', 'wb') as output_file:
+    filename = Path(file).stem
+    output_file = f'{output_dir}/{filename}_rearranged.pdf'
+    print(output_file)
+    with open(output_file, 'wb') as output_file:
             writer.write(output_file)
