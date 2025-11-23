@@ -23,8 +23,14 @@ def rearrange_pages(file: str, start: int, end: int, relative_pos: str , new_pos
         return
 
     # check if new_pos is out of the interval to reorder
+
+    if new_pos in [start, end]:
+        print("Rearrangement would not produce any change. PDF file will not be processed")
+        return
+
     if new_pos in range(start, end + 1):
-        print('The insertion page is within the interval of pages to reorder!')
+        print('Error: invalid value for the insertion page')
+        print(f'Insertion page must be before page {start - 1} or after page {end+1}.')
         return
     
     # after check has passed, adjust start and end to zero index
@@ -75,6 +81,5 @@ def rearrange_pages(file: str, start: int, end: int, relative_pos: str , new_pos
     # write the output file
     filename = Path(file).stem
     output_file = f'{output_dir}/{filename}_rearranged.pdf'
-    print(output_file)
     with open(output_file, 'wb') as output_file:
             writer.write(output_file)

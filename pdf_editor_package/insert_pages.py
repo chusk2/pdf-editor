@@ -25,31 +25,24 @@ def insert_pages(source_file: str, insert_file: str, insert_pos: int, relative_p
         return 
     
     # read file and check insert_pos is ok
-
-    # from pdf to be inserted there is start page but not end page
-    if ( bool(start_insert) + bool(end_insert) ) == 1:
-        if start_insert:
-            print('A start page in the pdf to insert was provided but not an end page!')
-        else:
-            print('An end page in the pdf to insert was provided but not a start page!')
-        return
     
-    # from insert pdf, only a selected interval of pages will be inserted
-    if start_insert and end_insert:
+    # read the insert_file to check its size
+    insert_reader = PdfReader(insert_file)
+    insert_length = len(insert_reader.pages)
 
-        # check pages interval
-        if check_interval(insert_file, start_insert, end_insert):
-            insert_reader = PdfReader(insert_file)
-            insert_pages = insert_reader.pages[start_insert - 1 : end_insert]
-            insert_length = len(insert_pages)
-        else:
-            return
+    # if start_insert is None, assign it to first page
+    if not start_insert:
+        start_insert = 1
+    # if end_insert is None, assign it to last page
+    elif not end_insert:
+        end_insert = insert_length
 
-    # the whole insert pdf will be inserted    
-    else:
-        insert_reader = PdfReader(insert_file)
-        insert_pages = insert_reader.pages
+    # check pages interval
+    if check_interval(insert_file, start_insert, end_insert):
+        insert_pages = insert_reader.pages[start_insert - 1 : end_insert]
         insert_length = len(insert_pages)
+    else:
+        return
     
     # write the pages
     
@@ -60,21 +53,12 @@ def insert_pages(source_file: str, insert_file: str, insert_pos: int, relative_p
     if relative_pos == 'before':
         writer = PdfWriter()
         for i in range(source_length):
-            # if insert pages are to be inserted
-            # at the very beginning of source file
-            if insert_pos  == 0:
+            if insert_pos  == i:
+                # add the insert pages before insert position
                 for j in range(insert_length):
                     writer.add_page(insert_pages[j])
-            # insert page has not come yet, so
-            # insert source page
-            elif i < insert_pos:
+                # insert current page
                 writer.add_page(source_pages[i])
-            # insert point has come, add insert_pages
-            elif i == insert_pos:
-                 for j in range(insert_length):
-                    writer.add_page(insert_pages[j])
-            # insert pages have already been added, so
-            # insert source page
             else:
                 writer.add_page(source_pages[i])
 
@@ -83,25 +67,12 @@ def insert_pages(source_file: str, insert_file: str, insert_pos: int, relative_p
     if relative_pos == 'after':
         writer = PdfWriter()
         for i in range(source_length):
-            # if insert pages are to be inserted
-            # just after 1st page
-            if (insert_pos  == 0) and i == 0:
-                # insert the 1st page
+            if insert_pos  == i:
+                # insert current page
                 writer.add_page(source_pages[i])
-                
-                # add the insert pages after 1st page
+                # add the insert pages after insert position
                 for j in range(insert_length):
                     writer.add_page(insert_pages[j])
-            # insert page has not come yet, so
-            # insert source page
-            elif i <= insert_pos:
-                writer.add_page(source_pages[i])
-            # insert point has just passed, add insert_pages
-            elif i == (insert_pos + 1):
-                 for j in range(insert_length):
-                    writer.add_page(insert_pages[j])
-            # insert pages have already been added, so
-            # insert source page
             else:
                 writer.add_page(source_pages[i])
     

@@ -1,8 +1,9 @@
 from PyPDF2 import PdfReader, PdfWriter
 from pathlib import Path
 from pdf_editor_package.check_interval import check_interval
+import os
       
-def delete_pages(file, start, end, output_dir='./output'):
+def delete_pages(file: str, start: int, end, output_dir='./output'):
         
         # check pages interval and read file
         if check_interval(file, start, end):
@@ -11,8 +12,6 @@ def delete_pages(file, start, end, output_dir='./output'):
             pdf_length = len(pages)
         else:
             return
-
-        print(f'File has {pdf_length} pages.')
 
         # select pages to extract
         pages_to_be_kept = [pages[i] for i in range(pdf_length)
@@ -23,6 +22,9 @@ def delete_pages(file, start, end, output_dir='./output'):
         for page in pages_to_be_kept:
             writer.add_page(page)
 
-        filename = Path(file).name
-        with open(f'{output_dir}/{filename}_cleaned.pdf', 'wb') as file:
+        # create the output folder
+        os.makedirs(output_dir, exist_ok=True)
+
+        filename = Path(file).stem
+        with open(f'{output_dir}/{filename}_trimmed.pdf', 'wb') as file:
               writer.write(file)

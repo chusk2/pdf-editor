@@ -1,5 +1,6 @@
 from PyPDF2 import PdfReader, PdfWriter
 from pathlib import Path
+import os
 from pdf_editor_package.check_interval import check_interval
       
 def extract_pages(file: str, start: int, end: int, output_dir='./output'):
@@ -21,6 +22,9 @@ def extract_pages(file: str, start: int, end: int, output_dir='./output'):
         writer = PdfWriter()
         for page in pages_to_extract:
             writer.add_page(page)
+
+        # create output folder
+        os.makedirs(output_dir, exist_ok=True)
 
         filename = Path(file).stem
         with open(f'{output_dir}/{filename}_extracted.pdf', 'wb') as file:
