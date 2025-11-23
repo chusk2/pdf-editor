@@ -22,15 +22,14 @@ def read_pdf(file, start, end):
     if start > pdf_length or end > pdf_length:
         print('The extract interval is out of the PDF pages range!')
         return None
-
-    print(f'The PDF file has {pdf_length} pages.')
-    return reader
       
 def extract_pages(file, start, end):
         
         # check pages interval and read file
         reader = read_pdf(file, start, end)
 
+        print(f'File has {len(reader.pages)} pages.')
+        
         # select pages to extract
         pages_to_extract = reader.pages[start -1 : end]
 
@@ -116,4 +115,4 @@ def reorder_pages(file, start, end, relative_pos , new_pos):
     with open(f'{filename}_reordered.pdf', 'wb') as file:
             writer.write(file)
 
-reorder_pages('sample.pdf', 3,5, 'before', 1)
+#reorder_pages('sample_pages.pdf', 3,5, 'before', 3)
