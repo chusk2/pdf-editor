@@ -2,7 +2,7 @@ from PyPDF2 import PdfReader, PdfWriter
 from pathlib import Path
 from pdf_editor_package.check_interval import check_interval
       
-def extract_pages(file, start, end):
+def delete_pages(file, start, end):
         
         # check pages interval and read file
         if check_interval(file, start, end):
@@ -15,13 +15,14 @@ def extract_pages(file, start, end):
         print(f'File has {pdf_length} pages.')
 
         # select pages to extract
-        pages_to_extract = pages[start -1 : end]
+        pages_to_be_kept = [pages[i] for i in range(pdf_length)
+                           if i not in range(start -1 , end) ]
 
         # write pages to output file
         writer = PdfWriter()
-        for page in pages_to_extract:
+        for page in pages_to_be_kept:
             writer.add_page(page)
 
         filename = Path(file).name
-        with open(f'./output/{filename}_extracted.pdf', 'wb') as file:
+        with open(f'./output/{filename}_cleaned.pdf', 'wb') as file:
               writer.write(file)

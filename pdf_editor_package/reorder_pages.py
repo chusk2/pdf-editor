@@ -1,7 +1,7 @@
 from PyPDF2 import PdfReader, PdfWriter
 from pathlib import Path
 from pdf_editor_package.check_interval import check_interval
-from pdf_editor_package.extract_pages import extract_pages
+
 
 # reorder pages
 def reorder_pages(file, start, end, relative_pos , new_pos):
