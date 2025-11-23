@@ -1,91 +1,119 @@
 # streamlit app to extract pages from a PDF file
-import streamlit as st
+
 from PyPDF2 import PdfReader, PdfWriter
 from io import BytesIO
+import os
+from pathlib import Path
 
-st.set_page_config(
-    page_title=None,
-    page_icon=None,
-    layout='centered',
-    initial_sidebar_state='auto',
-    menu_items=None
-)
-
-st.header('PDF Extractor App 📚 → 💻')
-st.subheader('Extract pages from a pdf file and download them.')
-
-st.markdown('Page created by [danicoder](https://github.com/chusk2/) 🧔🏻')
-st.markdown('App code available @ **[github](https://github.com/chusk2/pdf_pages_extractor)**')
-
-# center the image using columns
-c1, c2, c3 = st.columns([1,3,1])
-with c2:
-    st.image('./pdf_extractor_logo.png')
+os.makedirs('./temp', exist_ok = True)
 
 
-col1, col2 = st.columns([2,1])
-
-# upload file column
-with col1:
-
-    c1, c2  =st.columns([1,1])
-    with c1:
-        file = st.file_uploader('Upload a PDF file', type = 'pdf')
-    with c2:
-        st.image('./upload_icon.jpg', width=100)
-
-with col2:
-    if file:
-        st.session_state.file_name = file.name
-        reader = PdfReader(file)
-        pdf_length = len(reader.pages)
-
-        st.write(f'The uploaded file has {pdf_length} pages.')
-
-        start_page = st.number_input(label = 'Enter start page:',
-                                    min_value = 1,
-                                    max_value = pdf_length,
-                                    value = 1,
-                                    step = 1 )
-
-        end_page = st.number_input(label = 'Enter end page:',
-                                    min_value = 1,
-                                    max_value = pdf_length,
-                                    value = 1,
-                                    step = 1 )
+def read_pdf(file, start, end):
+    if end < start:
+        print('Start page cannot be lower than end page!')
+        return None
         
-        if st.button('Extract Pages'):
-            # extract the pages from pdf file
-            pages_to_extract = reader.pages[start_page - 1 : end_page]
+    # read pdf file
+    reader = PdfReader(file)
+    pdf_length = len(reader.pages)
+    print(f'The PDF file has {pdf_length} pages.')
 
-            writer = PdfWriter()
-            for page in pages_to_extract:
-                writer.add_page(page)
-            
-            # write all pages
-            if len(writer.pages) > 0:
-                # Use a BytesIO buffer to hold the resulting PDF in memory
-                output_pdf_bytes = BytesIO()
-                writer.write(output_pdf_bytes)
-                output_pdf_bytes.seek(0)
-                st.session_state.pdf_bytes = output_pdf_bytes
-                st.session_state.file_ready = True
-            else:
-                st.session_state.file_ready = False
-                st.warning('No pages selected to extract.')
+    # check start and end pages are within pages range
+    if start > pdf_length or end > pdf_length:
+        print('The extract interval is out of the PDF pages range!')
+        return None
+
+    print(f'The PDF file has {pdf_length} pages.')
+    return reader
+      
+def extract_pages(file, start, end):
+        
+        # check pages interval and read file
+        reader = read_pdf(file, start, end)
+
+        # select pages to extract
+        pages_to_extract = reader.pages[start -1 : end]
+
+        # write pages to output file
+        writer = PdfWriter()
+        for page in pages_to_extract:
+            writer.add_page(page)
+
+        filename = Path(file).name
+        with open(f'{filename}_extracted.pdf', 'wb') as file:
+              writer.write(file)
+
+# extract_pages('sample.pdf', 2,5)
+
+# reorder pages
+def reorder_pages(file, start, end, relative_pos , new_pos):
     
-    # if the file is removed, clear the session state
-    else:
-        if 'file_ready' in st.session_state:
-            st.session_state.file_ready = False
-        if 'pdf_bytes' in st.session_state:
-            del st.session_state['pdf_bytes']
-        if 'file_name' in st.session_state:
-            del st.session_state['file_name']
+    if relative_pos not in ['after', 'before']:
+        print("Invalid relative position value. Use 'before' or 'after'.")
+        return
+    
+    # check pages interval and read file
+    reader = read_pdf(file, start, end)
+    pages = reader.pages
+    pdf_length = len(pages)
 
-# Download button appears below the columns
-if st.session_state.get('file_ready', False):
-    st.download_button(label = 'Download the extracted pages as PDF file',
-                        data = st.session_state.pdf_bytes,
-                        file_name = f"extracted_{st.session_state.file_name}",
-                        mime= 'application/pdf')
+    if not (1 <= new_pos <= pdf_length):
+        print(f'New position {new_pos} is out of range (1-{pdf_length}).')
+        return
+
+    # check if new_pos is out of the interval to reorder
+    if new_pos in range(start, end + 1):
+        print('The insertion page is within the interval of pages to reorder!')
+        return
+    
+    # after check has passed, adjust start and end to zero index
+    start, end, new_pos = start - 1, end -1, new_pos - 1
+
+    writer = PdfWriter()
+
+    if relative_pos == 'after':
+        for i in range(pdf_length):
+            # page index is not within interval
+            if i not in range(start, end + 1):
+                # insert pages until reaching insert point
+                if i <= new_pos:
+                    writer.add_page(pages[i])
+                # insert point has just passed
+                # insert the interval pages
+                elif i == new_pos + 1:
+                    for j in range(start, end + 1):
+                        writer.add_page(pages[j])
+                    # after inserting the interval pages
+                    # add the new_pos page
+                    writer.add_page(pages[i])
+                # keep on adding pages after interval pages
+                # have been inserted
+                else:
+                    writer.add_page(pages[i])
+    
+    if relative_pos == 'before':
+        for i in range(pdf_length):
+            # page index is not within interval
+            if i not in range(start, end + 1):
+                # insert pages until reaching insert point
+                if i < new_pos:
+                    writer.add_page(pages[i])
+                # insert point has just passed
+                # insert the interval pages
+                elif i == new_pos:
+                    for j in range(start, end + 1):
+                        writer.add_page(pages[j])
+                    # after inserting the interval pages
+                    # add the new_pos page
+                    writer.add_page(pages[i])
+                # keep on adding pages after interval pages
+                # have been inserted
+                else:
+                    writer.add_page(pages[i])
+            
+    # write the output file
+    filename = Path(file).name
+    with open(f'{filename}_reordered.pdf', 'wb') as file:
+            writer.write(file)
+
+reorder_pages('sample.pdf', 3,5, 'before', 1)
