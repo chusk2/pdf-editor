@@ -50,8 +50,8 @@ def rearrange_pages(file: str, start: int, end: int, relative_pos: str , new_pos
 
     # if the new position is within the given interval,
     # there wouldn't be any change, so return the pdf without modification 
-    if new_pos in [start, end]:
-        print("Rearrangement would not produce any change. PDF file will not be processed")
+    if new_pos in range(start, end+1):
+        print("Rearrangement would not produce any change. PDF file will not be processed.")
         print(f'Insertion page should be before page {start - 1} or after page {end+1}.')
         return
     

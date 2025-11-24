@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from pdf_editor_package.extract_pages import extract_pages
 from pdf_editor_package.rearrange_pages import rearrange_pages
 from pdf_editor_package.insert_pages import insert_pages
-from pdf_editor_package.remove_pages import delete_pages
+from pdf_editor_package.remove_pages import remove_pages
 from pdf_editor_package.check_interval import check_interval
 
 
@@ -178,6 +178,7 @@ class TestPdfEditor(unittest.TestCase):
 
         print(f"--- Test {test_name} has passed! OK ---")
 
+        # rearrange_pages('./sync/sample_numbers.pdf', 3, 6, 'after', 4)
 
     def test_insert_pages(self):
         test_name = "test_insert_pages"
@@ -219,14 +220,14 @@ class TestPdfEditor(unittest.TestCase):
         print(f"--- Test {test_name} has passed! OK ---")
 
 
-    def test_delete_pages(self):
-        test_name = "test_delete_pages"
+    def test_remove_pages(self):
+        test_name = "test_remove_pages"
         print(f"\n--- Running test: {test_name} ---")
 
         with self.subTest("Delete from beginning"):
             start, end = 1, 3
             print(f"Subtest: Delete from beginning, Input: (..., {start}, {end})")
-            delete_pages(self.sample_pdf_path, start, end)
+            remove_pages(self.sample_pdf_path, start, end)
             output_path = self.output_dir / f"{self.sample_pdf_path.stem}_trimmed.pdf"
             reader = PdfReader(output_path)
             self.assertEqual(len(reader.pages), 7)
@@ -235,7 +236,7 @@ class TestPdfEditor(unittest.TestCase):
         with self.subTest("Delete from end"):
             start, end = 8, 10
             print(f"Subtest: Delete from end, Input: (..., {start}, {end})")
-            delete_pages(self.sample_pdf_path, start, end)
+            remove_pages(self.sample_pdf_path, start, end)
             output_path = self.output_dir / f"{self.sample_pdf_path.stem}_trimmed.pdf"
             reader = PdfReader(output_path)
             self.assertEqual(len(reader.pages), 7)
@@ -244,7 +245,7 @@ class TestPdfEditor(unittest.TestCase):
         with self.subTest("Delete single page"):
             start, end = 5, 5
             print(f"Subtest: Delete single page, Input: (..., {start}, {end})")
-            delete_pages(self.sample_pdf_path, start, end)
+            remove_pages(self.sample_pdf_path, start, end)
             output_path = self.output_dir / f"{self.sample_pdf_path.stem}_trimmed.pdf"
             reader = PdfReader(output_path)
             self.assertEqual(len(reader.pages), 9)
@@ -254,7 +255,7 @@ class TestPdfEditor(unittest.TestCase):
         with self.subTest("Delete all pages"):
             start, end = 1, 10
             print(f"Subtest: Delete all pages, Input: (..., {start}, {end})")
-            delete_pages(self.sample_pdf_path, start, end)
+            remove_pages(self.sample_pdf_path, start, end)
             output_path = self.output_dir / f"{self.sample_pdf_path.stem}_trimmed.pdf"
             reader = PdfReader(output_path)
             self.assertEqual(len(reader.pages), 0)
