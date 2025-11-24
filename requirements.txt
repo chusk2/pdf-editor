@@ -1,2 +1,2 @@
-streamlit==1.51.0
-PyPDF2==3.0.1
+PyPDF2
+reportlab

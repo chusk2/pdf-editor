@@ -6,6 +6,31 @@ from pdf_editor_package.check_interval import check_interval
 
 def insert_pages(source_file: str, insert_file: str, insert_pos: int, relative_pos: str, output_dir='./output',
                  start_insert = None, end_insert = None):
+    """
+    Inserts pages from one PDF into another.
+
+    This feature allows you to take all pages (or a specific range of pages)
+    from a second PDF and merge them into your main PDF. You can choose
+    exactly where you want the new pages to go.
+
+    For example, you can insert pages from 'report.pdf' either 'before' or
+    'after' page 5 of your 'main_document.pdf'.
+
+    Args:
+        source_file (str): The path to the main PDF file you are adding pages to.
+        insert_file (str): The path to the PDF file containing the pages you
+                           want to insert.
+        insert_pos (int): The page number in the main PDF that will be the
+                          reference point for the insertion.
+        relative_pos (str): Determines where to place the new pages.
+                            Use 'before' or 'after' the `insert_pos`.
+        output_dir (str, optional): The folder where the new, combined PDF
+                                    will be saved. Defaults to './output'.
+        start_insert (int, optional): The first page of the range to copy from
+                                      the `insert_file`. Defaults to the first page.
+        end_insert (int, optional): The last page of the range to copy from
+                                    the `insert_file`. Defaults to the last page.
+    """
 
     if relative_pos not in ['before', 'after']:
         print("Invalid relative position value. Use 'before' or 'after'.")
@@ -34,7 +59,7 @@ def insert_pages(source_file: str, insert_file: str, insert_pos: int, relative_p
     if not start_insert:
         start_insert = 1
     # if end_insert is None, assign it to last page
-    elif not end_insert:
+    if not end_insert:
         end_insert = insert_length
 
     # check pages interval

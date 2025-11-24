@@ -1,10 +1,32 @@
 from PyPDF2 import PdfReader, PdfWriter
 from pathlib import Path
+import os
 from pdf_editor_package.check_interval import check_interval
 
 
 # reorder pages
 def rearrange_pages(file: str, start: int, end: int, relative_pos: str , new_pos: int, output_dir='./output'):
+    """
+    Changes the order of pages in a PDF file.
+
+    This feature lets you select a single page or a range of pages and move
+    them to a new position in the document.
+
+    For example, you can take pages 8-10 and move them 'before' page 2,
+    making them the new pages 2, 3, and 4.
+
+    Args:
+        file (str): The path to the PDF file you want to reorganize.
+        start (int): The first page number of the block you want to move.
+        end (int): The last page number of the block you want to move.
+                   (Use the same number as `start` to move a single page).
+        relative_pos (str): Determines where to place the block. Use 'before'
+                            or 'after' the `new_pos`.
+        new_pos (int): The page number that will be the reference point for
+                       the move.
+        output_dir (str, optional): The folder where the new, rearranged PDF
+                                    will be saved. Defaults to './output'.
+    """
     
     if relative_pos not in ['after', 'before']:
         print("Invalid relative position value. Use 'before' or 'after'.")
@@ -41,29 +63,23 @@ def rearrange_pages(file: str, start: int, end: int, relative_pos: str , new_pos
     if relative_pos == 'after':
         for i in range(pdf_length):
             # page index is not within interval
-            if i not in range(start, end + 1):
+            if not i in range(start, end + 1):
+                # insert pages until reaching insert point)
+                if i != new_pos:
                 # insert pages until reaching insert point
-                if i <= new_pos:
                     writer.add_page(pages[i])
-                # insert point has just passed
-                # insert the interval pages
-                elif i == new_pos + 1:
+                
+                elif i == new_pos:
+                    writer.add_page(pages[i])
                     for j in range(start, end + 1):
                         writer.add_page(pages[j])
-                    # after inserting the interval pages
-                    # add the new_pos page
-                    writer.add_page(pages[i])
-                # keep on adding pages after interval pages
-                # have been inserted
-                else:
-                    writer.add_page(pages[i])
     
     if relative_pos == 'before':
         for i in range(pdf_length):
             # page index is not within interval
             if i not in range(start, end + 1):
                 # insert pages until reaching insert point
-                if i < new_pos:
+                if i != new_pos:
                     writer.add_page(pages[i])
                 # insert point has just passed
                 # insert the interval pages
@@ -73,12 +89,10 @@ def rearrange_pages(file: str, start: int, end: int, relative_pos: str , new_pos
                     # after inserting the interval pages
                     # add the new_pos page
                     writer.add_page(pages[i])
-                # keep on adding pages after interval pages
-                # have been inserted
-                else:
-                    writer.add_page(pages[i])
+
             
     # write the output file
+    os.makedirs(output_dir, exist_ok=True)
     filename = Path(file).stem
     output_file = f'{output_dir}/{filename}_rearranged.pdf'
     with open(output_file, 'wb') as output_file:
