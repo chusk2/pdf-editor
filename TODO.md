@@ -1,8 +1,10 @@
 # TODO
 
-- rearrange_pages.py:
-	- review code and comments
 
-- Overall review:
-	- docstrings review
-	- comments in code
+# DONE
+
+- review rearrange_pages.py
+- review check_interval.py
+- review extract_pages.py
+- review remove_pages.py
+- review insert_pages.py

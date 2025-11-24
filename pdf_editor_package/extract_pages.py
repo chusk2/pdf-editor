@@ -1,8 +1,12 @@
-from PyPDF2 import PdfReader, PdfWriter
-from pathlib import Path
 import os
+from pathlib import Path
+
+from PyPDF2 import PdfReader, PdfWriter
+
 from pdf_editor_package.check_interval import check_interval
-      
+
+## Extract pages from a PDF file
+
 def extract_pages(file: str, start: int, end: int, output_dir='./output'):
     """
     Extracts a range of pages from a PDF and saves them as a new file.
@@ -21,18 +25,19 @@ def extract_pages(file: str, start: int, end: int, output_dir='./output'):
                                     will be saved. Defaults to './output'.
     """
         
-    # check pages interval and read file
+    # check pages interval
     if check_interval(file, start, end):
         reader = PdfReader(file)
         pages = reader.pages
-        pdf_length = len(pages)
     else:
+        print("Page interval check failed. Extraction aborted.")
         return
 
-    # print(f'File has {pdf_length} pages.')
+    # modify start and end for 0-indexing
+    start, end = start - 1, end - 1
 
     # select pages to extract
-    pages_to_extract = pages[start -1 : end]
+    pages_to_extract = pages[start : end + 1]
 
     # write pages to output file
     writer = PdfWriter()
@@ -42,6 +47,10 @@ def extract_pages(file: str, start: int, end: int, output_dir='./output'):
     # create output folder
     os.makedirs(output_dir, exist_ok=True)
 
+    # create output filename
     filename = Path(file).stem
-    with open(f'{output_dir}/{filename}_extracted.pdf', 'wb') as file:
+    output_filename = f'{output_dir}/{filename}_extracted.pdf'
+
+    # save new pdf
+    with open(output_filename, 'wb') as file:
             writer.write(file)

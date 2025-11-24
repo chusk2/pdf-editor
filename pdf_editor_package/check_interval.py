@@ -1,5 +1,4 @@
 from PyPDF2 import PdfReader
-from pathlib import Path
 
 def check_interval(file, start, end):
     """
@@ -24,7 +23,6 @@ def check_interval(file, start, end):
     # read pdf file
     reader = PdfReader(file)
     pdf_length = len(reader.pages)
-    # print(f'The PDF file has {pdf_length} pages.')
 
     # check start and end pages are within pages range
     if start > pdf_length or end > pdf_length:
@@ -33,7 +31,7 @@ def check_interval(file, start, end):
             print(f'Start page must be between 1 and {pdf_length}.')
         elif end > pdf_length:
             print(f'End page must be between 1 and {pdf_length}.')
-
         return
+    
     else:
         return True

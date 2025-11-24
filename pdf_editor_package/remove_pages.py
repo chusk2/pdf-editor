@@ -1,9 +1,13 @@
-from PyPDF2 import PdfReader, PdfWriter
-from pathlib import Path
-from pdf_editor_package.check_interval import check_interval
 import os
-      
-def delete_pages(file: str, start: int, end, output_dir='./output'):
+from pathlib import Path
+
+from PyPDF2 import PdfReader, PdfWriter
+
+from pdf_editor_package.check_interval import check_interval
+
+## Remove pages from a PDF file
+
+def remove_pages(file: str, start: int, end, output_dir='./output'):
     """
     Removes a range of pages from a PDF file.
 
@@ -21,19 +25,23 @@ def delete_pages(file: str, start: int, end, output_dir='./output'):
                                     will be saved. Defaults to './output'.
     """
         
-    # check pages interval and read file
+    # check pages interval
     if check_interval(file, start, end):
         reader = PdfReader(file)
         pages = reader.pages
         pdf_length = len(pages)
     else:
+        print("Page interval is not valid. Removal aborted.")
         return
+
+    # modify start and end for 0-indexing
+    start, end = start - 1, end - 1
 
     # select pages to extract
     pages_to_be_kept = [pages[i] for i in range(pdf_length)
-                        if i not in range(start -1 , end) ]
+                        if i not in range(start , end + 1) ]
 
-    # write pages to output file
+    # add pages to writer object
     writer = PdfWriter()
     for page in pages_to_be_kept:
         writer.add_page(page)
@@ -41,6 +49,10 @@ def delete_pages(file: str, start: int, end, output_dir='./output'):
     # create the output folder
     os.makedirs(output_dir, exist_ok=True)
 
+    # create output filename
     filename = Path(file).stem
-    with open(f'{output_dir}/{filename}_trimmed.pdf', 'wb') as file:
+    output_filename = f'{output_dir}/{filename}_trimmed.pdf'
+
+    # save the new PDF
+    with open(output_filename, 'wb') as file:
             writer.write(file)

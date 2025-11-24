@@ -1,11 +1,14 @@
-from PyPDF2 import PdfReader, PdfWriter
 from pathlib import Path
+import os
+
+from PyPDF2 import PdfReader, PdfWriter
+
 from pdf_editor_package.check_interval import check_interval
 
 ### Insert pages from pdf
 
-def insert_pages(source_file: str, insert_file: str, insert_pos: int, relative_pos: str, output_dir='./output',
-                 start_insert = None, end_insert = None):
+def insert_pages(source_file: str, inserted_file: str, insert_pos: int, relative_pos: str, output_dir='./output',
+                 start_insertion = None, end_insertion = None):
     """
     Inserts pages from one PDF into another.
 
@@ -18,7 +21,7 @@ def insert_pages(source_file: str, insert_file: str, insert_pos: int, relative_p
 
     Args:
         source_file (str): The path to the main PDF file you are adding pages to.
-        insert_file (str): The path to the PDF file containing the pages you
+        inserted_file (str): The path to the PDF file containing the pages you
                            want to insert.
         insert_pos (int): The page number in the main PDF that will be the
                           reference point for the insertion.
@@ -26,14 +29,15 @@ def insert_pages(source_file: str, insert_file: str, insert_pos: int, relative_p
                             Use 'before' or 'after' the `insert_pos`.
         output_dir (str, optional): The folder where the new, combined PDF
                                     will be saved. Defaults to './output'.
-        start_insert (int, optional): The first page of the range to copy from
-                                      the `insert_file`. Defaults to the first page.
-        end_insert (int, optional): The last page of the range to copy from
-                                    the `insert_file`. Defaults to the last page.
+        start_insertion (int, optional): The first page of the range to copy from
+                                      the `inserted_file`. Defaults to the first page.
+        end_insertion (int, optional): The last page of the range to copy from
+                                    the `inserted_file`. Defaults to the last page.
     """
 
+    # check if relative_pos is valid
     if relative_pos not in ['before', 'after']:
-        print("Invalid relative position value. Use 'before' or 'after'.")
+        print("Error: invalid relative position value. Use 'before' or 'after'.")
         return
 
     # read source file
@@ -43,68 +47,86 @@ def insert_pages(source_file: str, insert_file: str, insert_pos: int, relative_p
 
     # check if the insert point is within source pdf pages range
     if  insert_pos < 1:
-        print('Minimum insert position is 1!')
+        print('Error: minimum insert position is 1.')
         return
     elif insert_pos > source_length:
-        print(f'PDF file to be inserted to has {source_length} but insert page ({insert_pos} is greater.')
+        print(f'Error: insert page position ({insert_pos}) is greater than the PDF file length ({source_length} pages).')
         return 
     
-    # read file and check insert_pos is ok
     
-    # read the insert_file to check its size
-    insert_reader = PdfReader(insert_file)
+    # read the inserted_file to check its length
+    insert_reader = PdfReader(inserted_file)
     insert_length = len(insert_reader.pages)
 
-    # if start_insert is None, assign it to first page
-    if not start_insert:
-        start_insert = 1
-    # if end_insert is None, assign it to last page
-    if not end_insert:
-        end_insert = insert_length
+    # if start_insertion is None, assign it to be first page
+    if not start_insertion:
+        start_insertion = 1
+    # if end_insertion is None, assign it to be last page
+    if not end_insertion:
+        end_insertion = insert_length
 
     # check pages interval
-    if check_interval(insert_file, start_insert, end_insert):
-        insert_pages = insert_reader.pages[start_insert - 1 : end_insert]
+    if check_interval(inserted_file, start_insertion, end_insertion):
+        insert_pages = insert_reader.pages[start_insertion - 1 : end_insertion]
         insert_length = len(insert_pages)
     else:
+        print("Error: page interval check for insertion pdf failed. Insertion aborted.")
         return
     
-    # write the pages
+    ## write the pages
     
-    # adjust the insert_pos to zero index
+    # adjust the insert_pos to be 0-indexing compliant
     insert_pos -= 1
 
-    # insert pages before
+    ## insert pages before
     if relative_pos == 'before':
         writer = PdfWriter()
         for i in range(source_length):
-            if insert_pos  == i:
-                # add the insert pages before insert position
+
+            # if current page is the insert position
+            if insert_pos == i:
+
+                # add the insertion pages before insert position
                 for j in range(insert_length):
                     writer.add_page(insert_pages[j])
-                # insert current page
+
+                # add insertion page from source pdf
                 writer.add_page(source_pages[i])
+            
+            # add regular pages from source pdf
             else:
                 writer.add_page(source_pages[i])
 
     
-    # insert pages after
+    ## insert pages after
     if relative_pos == 'after':
         writer = PdfWriter()
         for i in range(source_length):
+
+            # if current page is the insert position
             if insert_pos  == i:
-                # insert current page
+
+                # add insertion page from source pdf
                 writer.add_page(source_pages[i])
-                # add the insert pages after insert position
+
+                # add the insertion pages after insert position
                 for j in range(insert_length):
                     writer.add_page(insert_pages[j])
+            
+            # add regular pages from source pdf
             else:
                 writer.add_page(source_pages[i])
     
-    # write the output file
-    filename = Path(source_file).stem
-    output_file = f'{output_dir}/{filename}_expanded.pdf'
-    with open(output_file, 'wb') as output_file:
-        writer.write(output_file)
-        
+    ## write the output file
 
+    # create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    # create output filename
+    filename = Path(source_file).stem
+    output_filename = f'{output_dir}/{filename}_expanded.pdf'
+
+    # save the combined pdf to the output file
+    with open(output_filename, 'wb') as file:
+        writer.write(file)
+        
