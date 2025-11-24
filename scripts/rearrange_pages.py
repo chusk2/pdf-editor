@@ -3,7 +3,7 @@ from pathlib import Path
 
 from PyPDF2 import PdfReader, PdfWriter
 
-from pdf_editor_package.check_interval import check_interval
+from scripts.check_interval import check_interval
 
 def rearrange_pages(file: str, start: int, end: int, relative_pos: str , new_pos: int,
                     output_dir='./output'):

@@ -3,7 +3,7 @@ import os
 
 from PyPDF2 import PdfReader, PdfWriter
 
-from pdf_editor_package.check_interval import check_interval
+from scripts.check_interval import check_interval
 
 ### Insert pages from pdf
 

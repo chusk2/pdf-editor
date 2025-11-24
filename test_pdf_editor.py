@@ -10,11 +10,11 @@ import sys
 # Ensure the package is in the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from pdf_editor_package.extract_pages import extract_pages
-from pdf_editor_package.rearrange_pages import rearrange_pages
-from pdf_editor_package.insert_pages import insert_pages
-from pdf_editor_package.remove_pages import remove_pages
-from pdf_editor_package.check_interval import check_interval
+from scripts.extract_pages import extract_pages
+from scripts.rearrange_pages import rearrange_pages
+from scripts.insert_pages import insert_pages
+from scripts.remove_pages import remove_pages
+from scripts.check_interval import check_interval
 
 
 def create_dummy_pdf(filename, content):

@@ -1,5 +1,6 @@
 # TODO
 
+- Remove `__pycache__` from version control
 
 # DONE
 
