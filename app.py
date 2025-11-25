@@ -51,6 +51,29 @@ functions = {
     'remove' : remove_pages
 }
 
+# Initialize a counter to force widget recreation
+def reset_interval_widgets():
+    st.session_state['start_widget_counter'] += 1
+    st.session_state['end_widget_counter'] += 1
+
+# initialize keys
+if 'start_widget_counter' not in st.session_state:  
+        st.session_state['start_widget_counter'] = 0
+if 'end_widget_counter' not in st.session_state:
+        st.session_state['end_widget_counter'] = 0
+def interval_pages_widgets(pdf_file_length):
+    col1, col2 = st.columns(2)
+    with col1:
+        start = st.number_input(label = 'Start page', min_value = 1, max_value= pdf_file_length,
+                                value = 1, step = 1,
+                                key = 'start_widget_counter')
+    with col2:
+        end = st.number_input(label = 'End page', min_value = 1,
+                                max_value = pdf_file_length, step = 1, value = 1,
+                                key = 'end_widget_counter')
+    
+    return start, end
+
 def reset_uploader_key():
     if 'file_uploader_key' in st.session_state:
         st.session_state['file_uploader_key'] += 1
@@ -128,23 +151,25 @@ if pdf_action:
 
             pdf_file_length = len(PdfReader(uploaded_file).pages)
             
+            if action != 'extract':
+                st.write(f'Select interval of pages to be {action}d.')
+            else:
+                st.write(f'Select interval of pages to be {action}ed.')
+
+            start, end = interval_pages_widgets(pdf_file_length)
+            
+        if action == 'rearrange':
             col1, col2 = st.columns(2)
             with col1:
-                start = 1
-                start = st.number_input(label = 'Start page', min_value = start, max_value= pdf_file_length,
-                                        value = 1, step = 1)
+                relative_pos = st.radio("Relative position", ('before', 'after'))
             with col2:
-                end = start
-                end = st.number_input(label = 'End page', min_value = start,
-                                      max_value = pdf_file_length, step = 1, value = max(start, end) )
-            
-            if action == 'rearrange':
-                col1, col2 = st.columns(2)
-                with col1:
-                    relative_pos = st.radio("Relative position", ('before', 'after'))
-                with col2:
-                    new_pos = st.number_input(label = 'New position', min_value=1, max_value=pdf_file_length,
-                                              step = 1, value = 1)
+                new_pos = st.number_input(label = 'New position', min_value=1, max_value=pdf_file_length,
+                                            step = 1, value = 1)
+            if new_pos in range(start, end + 1):
+                st.warning("Rearrangement would not produce any change. PDF file will not be processed.")
+                st.write(f'Insertion page should be before page {start - 1} or after page {end+1}.')
+
+                    
 
         # design upload and page limits for insert action
         elif action == 'insert':
@@ -164,14 +189,8 @@ if pdf_action:
                                                      max_value=source_length, step = 1, value = 1)
                     # interval from insertion file
                     st.write("Optional: Select a range of pages to insert from the insertion file.")
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        start_insertion = 1
-                        start_insertion = st.number_input(label = 'Start page (insertion)', min_value= start_insertion,
-                                                          max_value= inserted_length, step = 1, value = 1)
-                    with col2:
-                        end_insertion = st.number_input(label = 'End page (insertion)', min_value=start_insertion,
-                                                        max_value = inserted_length, step = 1, value = start_insertion)
+                    
+                    start_insertion, end_insertion = interval_pages_widgets(inserted_length)
 
 
         col1, col2, col3 = st.columns([1, 1, 2])
@@ -185,19 +204,59 @@ if pdf_action:
 
         with col2:
             button_label = f"{action.capitalize()} files" if action == 'merge' else f"{action.capitalize()} pages"
-            if st.button(button_label):
+            action_button_clicked = st.button(button_label)
+
+            if action_button_clicked:
+
+                # check if interval of pages is ok
+                # but only for extract, remove, rearrange and insert
+                if action != 'insert':
+                    interval_ok = end >= start
                 try:
                     if action in ['extract', 'remove']:
-                        output_buffer, output_filename = function(uploaded_files['files'][0], start, end)
+                        if interval_ok:
+                            output_buffer, output_filename = function(uploaded_files['files'][0], start, end)
+                    
                     elif action == 'merge':
                         output_buffer, output_filename = function(uploaded_files['files'])
+                    
                     elif action == 'rearrange':
-                        output_buffer, output_filename = function(uploaded_files['files'][0], start, end, relative_pos, new_pos)
+                        if interval_ok:
+                            # when new position for extracted pages is within extracted pages range
+                            # the rearranged file would be same as input file
+                            # in this case do nothing
+                            rearranged_file_equals_input_file = new_pos in range(start, end+1)
+                            
+                            if not rearranged_file_equals_input_file:
+                                output_buffer, output_filename = function(uploaded_files['files'][0],
+                                                                          start, end, relative_pos, new_pos)
+                            elif rearranged_file_equals_input_file:
+                                interval_ok = False
+                    
                     elif action == 'insert':
-                        output_buffer, output_filename = function(source_file, inserted_files, insert_pos, relative_pos, start_insertion, end_insertion)
+                        if interval_ok:
+                            output_buffer, output_filename = function(source_file, inserted_files,
+                                                                      insert_pos, relative_pos,
+                                                                      start_insertion, end_insertion)
 
                     with col3:
-                        st.download_button(f"Download {action}d file", output_buffer.getvalue(), output_filename, "application/pdf")
-                    st.success('Processed file ready to be downloaded!')
+                        if interval_ok and action != 'insert':
+                            st.download_button(f"Download {action}d file", output_buffer.getvalue(), output_filename, "application/pdf")
+                        
+                            
                 except Exception as e:
                     st.warning(f'Error: {e}')
+
+        
+        if end < start:
+            st.warning('Please, increase end page value to be equal or greater than start page value.')
+
+        elif action_button_clicked and (start > end):
+            st.error('Error: end page lower than start page. Action canceled')
+        
+        elif action_button_clicked and action == "rearrange" and not interval_ok:
+            st.warning('Rearranged file would be same as input file. Action canceled.')
+
+        if action_button_clicked and (start <= end):
+            st.success('Processed file ready to be downloaded!')
+            

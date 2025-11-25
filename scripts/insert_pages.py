@@ -3,7 +3,6 @@ import io
 
 from PyPDF2 import PdfReader, PdfWriter
 
-from scripts.check_interval import check_interval
 
 ### Insert pages from pdf
 
@@ -32,11 +31,6 @@ def insert_pages(source_file, inserted_file, insert_pos: int, relative_pos: str,
         end_insertion (int, optional): The last page of the range to copy from
                                     the `inserted_file`. Defaults to the last page.
     """
-
-    # check if relative_pos is valid
-    if relative_pos not in ['before', 'after']:
-        print("Error: invalid relative position value. Use 'before' or 'after'.")
-        return
 
     # read source file
     source_reader = PdfReader(source_file)

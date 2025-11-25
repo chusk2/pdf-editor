@@ -3,7 +3,6 @@ from pathlib import Path
 
 from PyPDF2 import PdfReader, PdfWriter
 
-from scripts.check_interval import check_interval
 
 def rearrange_pages(file, start: int, end: int, relative_pos: str , new_pos: int):
     """
@@ -25,33 +24,10 @@ def rearrange_pages(file, start: int, end: int, relative_pos: str , new_pos: int
         new_pos (int): The page number that will be the reference point for
                        the move.
     """
-    
-    # check if relative position value is a valid one
-    if relative_pos not in ['after', 'before']:
-        print("Invalid relative position value. Use 'before' or 'after'.")
-        return
-    
-    # check pages interval
-    if check_interval(file, start, end):
-        reader = PdfReader(file)
-        pages = reader.pages
-        pdf_length = len(pages)
-    else:
-        print("Page interval check failed. Rearrangement aborted.")
-        return
+    reader = PdfReader(file)
+    pages = reader.pages
+    pdf_length = len(pages)
 
-    # check if new position value is within pdf's pages range
-    if not (1 <= new_pos <= pdf_length):
-        print(f'New position {new_pos} is out of range (1-{pdf_length}).')
-        return
-
-    # if the new position is within the given interval,
-    # there wouldn't be any change, so return the pdf without modification 
-    if new_pos in range(start, end+1):
-        print("Rearrangement would not produce any change. PDF file will not be processed.")
-        print(f'Insertion page should be before page {start - 1} or after page {end+1}.')
-        return
-    
     # after check has passed, adjust start and end to be zero indexing compliant
     start, end, new_pos = start - 1, end -1, new_pos - 1
 

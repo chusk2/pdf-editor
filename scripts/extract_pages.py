@@ -4,7 +4,6 @@ import io
 
 from PyPDF2 import PdfReader, PdfWriter
 
-from scripts.check_interval import check_interval
 
 ## Extract pages from a PDF file
 
@@ -24,13 +23,8 @@ def extract_pages(file, start: int, end: int):
         end (int): The last page number of the range to extract.
     """
         
-    # check pages interval
-    if check_interval(file, start, end):
-        reader = PdfReader(file)
-        pages = reader.pages
-    else:
-        print("Page interval check failed. Extraction aborted.")
-        return
+    reader = PdfReader(file)
+    pages = reader.pages
 
     # modify start and end for 0-indexing
     start, end = start - 1, end - 1

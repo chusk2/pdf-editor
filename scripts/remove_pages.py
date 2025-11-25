@@ -4,7 +4,6 @@ import io
 
 from PyPDF2 import PdfReader, PdfWriter
 
-from scripts.check_interval import check_interval
 
 ## Remove pages from a PDF file
 
@@ -23,15 +22,10 @@ def remove_pages(file, start: int, end: int):
         start (int): The first page number of the range to delete.
         end (int): The last page number of the range to delete.
     """
-        
-    # check pages interval
-    if check_interval(file, start, end):
-        reader = PdfReader(file)
-        pages = reader.pages
-        pdf_length = len(pages)
-    else:
-        print("Page interval is not valid. Removal aborted.")
-        return
+
+    reader = PdfReader(file)
+    pages = reader.pages
+    pdf_length = len(pages)
 
     # modify start and end for 0-indexing
     start, end = start - 1, end - 1
