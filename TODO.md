@@ -1,6 +1,10 @@
 # TODO
 
-- modify insert pages to allow multiple files to be inserted
+- check if insert pages allows multiple files to be inserted
+- rearrange interface for insert pages
+  - insertion page below source file
+  - start and end pages below each insertion file
+- fix start and end validation
 
 # DONE
 - design interface for all actions except for extract

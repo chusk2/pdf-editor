@@ -74,7 +74,7 @@ def upload_files(action):
         source_file = st.file_uploader("Select the source PDF file...",
                                        key=st.session_state['file_uploader_key'],
                                        type=['pdf'])
-        inserted_files = st.file_uploader("Select the PDF file to insert...",
+        inserted_files = st.file_uploader("Select PDF file(s) to insert...",
                                          key=st.session_state['file_uploader_key_2'],
                                          type=['pdf'],
                                          accept_multiple_files=True)
@@ -130,11 +130,13 @@ if pdf_action:
             
             col1, col2 = st.columns(2)
             with col1:
-                start = st.number_input(label = 'Start page', min_value = 1, max_value= pdf_file_length,
-                                        value = 1, step = 1, key = 'start_value')
+                start = 1
+                start = st.number_input(label = 'Start page', min_value = start, max_value= pdf_file_length,
+                                        value = 1, step = 1)
             with col2:
-                end = st.number_input(label = 'End page', min_value = st.session_state['start_value'],
-                                      max_value = pdf_file_length, step = 1, key = st.session_state['start_value'])
+                end = start
+                end = st.number_input(label = 'End page', min_value = start,
+                                      max_value = pdf_file_length, step = 1, value = max(start, end) )
             
             if action == 'rearrange':
                 col1, col2 = st.columns(2)
@@ -147,7 +149,7 @@ if pdf_action:
         # design upload and page limits for insert action
         elif action == 'insert':
             source_file = uploaded_files['source']
-            inserted_files = uploaded_files['insert']
+            inserted_files = uploaded_files['inserted_files']
             if source_file and inserted_files:
                 source_length = len(PdfReader(source_file).pages)
                 for ins_file in inserted_files:
@@ -164,11 +166,12 @@ if pdf_action:
                     st.write("Optional: Select a range of pages to insert from the insertion file.")
                     col1, col2 = st.columns(2)
                     with col1:
-                        start_insertion = st.number_input(label = 'Start page (insertion)', min_value=1,
-                                                          max_value= inserted_length, step = 1, value = 1, key = 'start_insertion')
+                        start_insertion = 1
+                        start_insertion = st.number_input(label = 'Start page (insertion)', min_value= start_insertion,
+                                                          max_value= inserted_length, step = 1, value = 1)
                     with col2:
-                        end_insertion = st.number_input(label = 'End page (insertion)', min_value=st.session_state['start_insertion'],
-                                                        max_value = inserted_length, step = 1, value = st.session_state['start_insertion'])
+                        end_insertion = st.number_input(label = 'End page (insertion)', min_value=start_insertion,
+                                                        max_value = inserted_length, step = 1, value = start_insertion)
 
 
         col1, col2, col3 = st.columns([1, 1, 2])
