@@ -1,6 +1,6 @@
 from PyPDF2 import PdfReader
 
-def check_interval(file, start, end):
+def check_interval(file, start: int, end:int):
     """
     Checks if a given page interval is valid for a PDF file.
 

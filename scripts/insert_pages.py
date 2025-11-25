@@ -1,5 +1,5 @@
 from pathlib import Path
-import os
+import io
 
 from PyPDF2 import PdfReader, PdfWriter
 
@@ -7,7 +7,7 @@ from scripts.check_interval import check_interval
 
 ### Insert pages from pdf
 
-def insert_pages(source_file: str, inserted_file: str, insert_pos: int, relative_pos: str, output_dir='./output',
+def insert_pages(source_file, inserted_file, insert_pos: int, relative_pos: str,
                  start_insertion = None, end_insertion = None):
     """
     Inserts pages from one PDF into another.
@@ -27,8 +27,6 @@ def insert_pages(source_file: str, inserted_file: str, insert_pos: int, relative
                           reference point for the insertion.
         relative_pos (str): Determines where to place the new pages.
                             Use 'before' or 'after' the `insert_pos`.
-        output_dir (str, optional): The folder where the new, combined PDF
-                                    will be saved. Defaults to './output'.
         start_insertion (int, optional): The first page of the range to copy from
                                       the `inserted_file`. Defaults to the first page.
         end_insertion (int, optional): The last page of the range to copy from
@@ -119,14 +117,13 @@ def insert_pages(source_file: str, inserted_file: str, insert_pos: int, relative
     
     ## write the output file
 
-    # create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
-
     # create output filename
-    filename = Path(source_file).stem
-    output_filename = f'{output_dir}/{filename}_expanded.pdf'
+    filename = Path(source_file.name)
+    output_filename = f'{filename.stem}_expanded.pdf'
 
-    # save the combined pdf to the output file
-    with open(output_filename, 'wb') as file:
-        writer.write(file)
+    # create a memory buffer to store output pdf
+    output_buffer = io.BytesIO()
+    writer.write(output_buffer)
+
+    return output_buffer, output_filename
         

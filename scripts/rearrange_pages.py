@@ -1,12 +1,11 @@
-import os
+import io
 from pathlib import Path
 
 from PyPDF2 import PdfReader, PdfWriter
 
 from scripts.check_interval import check_interval
 
-def rearrange_pages(file: str, start: int, end: int, relative_pos: str , new_pos: int,
-                    output_dir='./output'):
+def rearrange_pages(file, start: int, end: int, relative_pos: str , new_pos: int):
     """
     Changes the order of pages in a PDF file.
 
@@ -25,8 +24,6 @@ def rearrange_pages(file: str, start: int, end: int, relative_pos: str , new_pos
                             or 'after' the `new_pos`.
         new_pos (int): The page number that will be the reference point for
                        the move.
-        output_dir (str, optional): The folder where the new, rearranged PDF
-                                    will be saved. Defaults to './output'.
     """
     
     # check if relative position value is a valid one
@@ -106,13 +103,12 @@ def rearrange_pages(file: str, start: int, end: int, relative_pos: str , new_pos
             
     ## write the output file
 
-    # create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
-
     # prepare output file name
-    filename = Path(file).stem
-    output_filename = f'{output_dir}/{filename}_rearranged.pdf'
+    filename = Path(file)
+    output_filename = f'{filename.stem}_rearranged.pdf'
 
-    # write the rearranged pdf to the output file
-    with open(output_filename, 'wb') as file:
-            writer.write(file)
+    # create a memory buffer to store output pdf
+    output_buffer = io.BytesIO()
+    writer.write(output_buffer)
+
+    return output_buffer, output_filename

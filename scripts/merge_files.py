@@ -1,10 +1,10 @@
-import os
+import io
 
 from PyPDF2 import PdfReader, PdfWriter
 
 ## Merge PDF files
 
-def merge_files(files: list[str], output_dir='./output'):
+def merge_files(files: list):
     """
     Merges multiple PDF files into a single PDF file.
 
@@ -28,10 +28,11 @@ def merge_files(files: list[str], output_dir='./output'):
          # add all pages from reader
          writer.append_pages_from_reader(reader)
     
-    # create output folder
-    os.makedirs(output_dir, exist_ok = True)
-    filename = f'{output_dir}/merged_pdf_files.pdf'
+    # create output filename
+    output_filename = 'merged_file.pdf'
 
-    # save the merged file
-    with open(filename, 'wb') as output_file:
-        writer.write(output_file)
+    # create a memory buffer to store output pdf
+    output_buffer = io.BytesIO()
+    writer.write(output_buffer)
+
+    return output_buffer, output_filename
