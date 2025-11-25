@@ -10,11 +10,10 @@ from scripts.remove_pages       import remove_pages
 
 st.title('PDF Editor')
 
-st.header('PDF Editor')
+st.sidebar.markdown('# Choose an action')
+st.sidebar.subheader('Select an action from the list below to perform on a pdf file')
 
-st.subheader('Choose a function:')
-
-pdf_function = st.radio("Action to be performed:",
+pdf_function = st.sidebar.radio("Actions available:",
         options = ['Extract pages',
                     'Insert pages',
                     'Merge pdf files',
@@ -63,10 +62,14 @@ if pdf_function == 'Extract pages':
     start = st.number_input('Start page', min_value = 1, value = 1, step = 1 )
     end = st.number_input('End page', min_value = 1, value = 1, step = 1)
 
-    if st.button('Extract pages'):
-        extract_pages(filename_path, start, end)
+    col1, col2 = st.columns([1,1])
+
+    with col1:
+        if st.button('Extract pages'):
+            extract_pages(filename_path, start, end)
     
-    if file:
-        if st.button('Reset Extract pages'):
-            st.session_state['file_uploader_key'] += 1
-            st.rerun()
+    with col2:
+        if file:
+            if st.button('Reset Extract pages'):
+                st.session_state['file_uploader_key'] += 1
+                st.rerun()
