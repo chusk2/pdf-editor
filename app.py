@@ -97,18 +97,6 @@ def upload_files(action):
     # Initialize the key for upload_file in session state
     if 'file_uploader_key' not in st.session_state:
         st.session_state['file_uploader_key'] = 0
-
-    ## INSERT ACTION
-    if action == 'insert':
-        st.session_state['file_uploader_key_2'] = st.session_state.get('file_uploader_key_2', 100)
-        source_file = st.file_uploader("Select the source PDF file...",
-                                       key=st.session_state['file_uploader_key'],
-                                       type=['pdf'])
-        inserted_files = st.file_uploader("Select PDF file(s) to insert...",
-                                         key=st.session_state['file_uploader_key_2'],
-                                         type=['pdf'],
-                                         accept_multiple_files=True)
-        return {'source': source_file, 'inserted_files': inserted_files}
     
     ## MERGE ACTION
     elif action == 'merge':
@@ -124,6 +112,18 @@ def upload_files(action):
                                          key=st.session_state['file_uploader_key'],
                                          type=['pdf'])
         return {'files': [uploaded_file] if uploaded_file else []}
+
+def upload_files_insert():
+    # INSERT ACTION
+    st.session_state['file_uploader_key_2'] = st.session_state.get('file_uploader_key_2', 100)
+    source_file = st.file_uploader("Select the source PDF file...",
+                                    key=st.session_state['file_uploader_key'],
+                                    type=['pdf'])
+    inserted_files = st.file_uploader("Select PDF file(s) to insert...",
+                                        key=st.session_state['file_uploader_key_2'],
+                                        type=['pdf'],
+                                        accept_multiple_files=True)
+    return {'source': source_file, 'inserted_files': inserted_files}
 
 # extract action name from option
 if pdf_action:
@@ -153,8 +153,9 @@ if pdf_action:
     # create the start and end pages widgets
     if any(uploaded_files.values()):
 
+        ## EXTRACT, REMOVE, REARRANGE
         # start and end pages widget
-        # for extract, remove and rearrange actions
+        
         if action in ['extract', 'remove', 'rearrange']:
 
             # only one file was uploaded
@@ -172,7 +173,8 @@ if pdf_action:
             # add start and end widgets
             start, end = interval_pages_widgets(pdf_file_length)
         
-        # add insert position and relative position widgets for rearrange action
+        ## REARRANGE
+        #  add insert position and relative position widgets
         if action == 'rearrange':
             col1, col2 = st.columns(2)
             with col1:
@@ -186,8 +188,7 @@ if pdf_action:
                 st.warning(f"Rearrangement would not produce any change. PDF file will not be processed. \
                             \n\nInsertion page should be before page {start - 1} or after page {end+1}.")
 
-                    
-
+        ## INSERT
         # design upload and page limits for insert action
         elif action == 'insert':
             source_file = uploaded_files['source']
@@ -207,27 +208,32 @@ if pdf_action:
                     # interval from insertion file
                     st.write("Optional: Select a range of pages to insert from the insertion file.")
                     
-                    start_insertion, end_insertion = interval_pages_widgets(inserted_length)
+                    start, end = interval_pages_widgets(inserted_length)
 
 
+        ## RESET AND PERFORM ACTION BUTTONS
         col1, col2, col3 = st.columns([1, 1, 2])
 
+        # RESET BUTTON
         with col1:
             if st.button('Reset operation'):
                 st.session_state['file_uploader_key'] += 1
                 if 'file_uploader_key_2' in st.session_state:
                     st.session_state['file_uploader_key_2'] += 1
                 st.rerun()
-
+        
+        ## ACTION BUTTON
         with col2:
             button_label = f"{action.capitalize()} files" if action == 'merge' else f"{action.capitalize()} pages"
             action_button_clicked = st.button(button_label)
 
+            ## ONCE ACTION BUTTON IS CLICKED
             if action_button_clicked:
-
+                
+                ## EXTRACT, REMOVE, REARRANGE, INSERT
                 # check if interval of pages is ok
-                # but only for extract, remove, rearrange and insert
                 if action != 'insert':
+                    # check in all cases that end page is >= start page
                     interval_ok = end >= start
                 try:
                     if action in ['extract', 'remove']:
@@ -254,10 +260,10 @@ if pdf_action:
                                 interval_ok = False
                     
                     elif action == 'insert':
-                        if interval_ok:
+                        if interval_ok and inserted_files:
                             output_buffer, output_filename = function(source_file, inserted_files,
                                                                       insert_pos, relative_pos,
-                                                                      start_insertion, end_insertion)
+                                                                      start, end)
 
                     with col3:
                         if interval_ok and action != 'insert':
@@ -268,9 +274,9 @@ if pdf_action:
                     st.warning(f'Error: {e}')
 
         
-        if end < start:
-            st.warning('Please, increase end page value to be equal or greater than start page value.')
-
+        if (end < start) and action != 'insert':
+                st.warning('Please, increase end page value to be equal or greater than start page value.')
+        
         elif action_button_clicked and (start > end):
             st.error('Error: end page lower than start page. Action canceled')
         
