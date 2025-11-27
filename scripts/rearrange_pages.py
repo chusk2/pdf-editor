@@ -25,62 +25,32 @@ def rearrange_pages(file, start: int, end: int, relative_pos: str , new_pos: int
                        the move.
     """
     reader = PdfReader(file)
-    pages = reader.pages
-    pdf_length = len(pages)
+    pdf_length = len(reader.pages)
+    source_pages = reader.pages
 
-    # after check has passed, adjust start and end to be zero indexing compliant
-    start, end, new_pos = start - 1, end -1, new_pos - 1
+    # Isolate the block of pages to be moved
+    moving_block = source_pages[start - 1 : end]
 
-    writer = PdfWriter()
+    # Create a list of pages that are NOT being moved
+    stationary_pages = [p for i, p in enumerate(source_pages) if i not in range(start - 1, end)]
 
-    # moving block after the new position
+    # Calculate the correct 0-indexed insertion point in the modified list
+    pages_to_discount = len([p for p in range(start - 1, end) if p < new_pos - 1])
+    final_pos = (new_pos - 1) - pages_to_discount
     if relative_pos == 'after':
-        for i in range(pdf_length):
+        final_pos += 1
 
-            # page index is not within moving pages interval
-            if not i in range(start, end + 1):
+    # Re-insert the block at the new position
+    stationary_pages[final_pos:final_pos] = moving_block
 
-                # if insertion page has not been reached
-                # insert regular page
-                if i != new_pos:
-                    writer.add_page(pages[i])
-
-                # insertion page has just been reached
-                # insert the new pages block after it
-                elif i == new_pos:
-                    writer.add_page(pages[i])
-
-                    # after inserting the new_pos page
-                    # add the moving pages block
-                    for j in range(start, end + 1):
-                        writer.add_page(pages[j])
-    
-    # moving block before the new position
-    if relative_pos == 'before':
-        for i in range(pdf_length):
-            # page index is not within moving pages interval
-            if i not in range(start, end + 1):
-
-                # if insertion page has not been reached
-                # insert regular page
-                if i != new_pos:
-                    writer.add_page(pages[i])
-
-                # insert point has just been reached
-                # insert the new pages block before it
-                elif i == new_pos:
-                    for j in range(start, end + 1):
-                        writer.add_page(pages[j])
-
-                    # after inserting the moving pages block
-                    # add the new_pos page
-                    writer.add_page(pages[i])
-
-            
+    # Add the final ordered pages to a new writer
+    writer = PdfWriter()
+    for page in stationary_pages:
+        writer.add_page(page)
     ## write the output file
 
     # prepare output file name
-    filename = Path(file)
+    filename = Path(file.name)
     output_filename = f'{filename.stem}_rearranged.pdf'
 
     # create a memory buffer to store output pdf

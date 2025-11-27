@@ -1,8 +1,10 @@
 import streamlit as st
 import tempfile
 import os
+import io
+from pathlib import Path
 
-from PyPDF2 import PdfReader
+from PyPDF2 import PdfReader, PdfWriter
 
 from scripts.extract_pages      import extract_pages
 from scripts.insert_pages       import insert_pages
@@ -55,7 +57,8 @@ functions = {
 for key in ['start_widget_counter',
             'end_widget_counter',
             'uploader_key_counter',
-            'multi_uploader_key_counter']:
+            'multi_uploader_key_counter',
+            'insert_widget_counters']:
     if key not in st.session_state.keys():
         st.session_state[key] = 0
 
@@ -72,6 +75,10 @@ def reset_start_end():
     st.session_state['start_widget_counter'] += 1
     st.session_state['end_widget_counter'] += 1
     st.rerun()
+
+def reset_start_end_insert_pages():
+    st.session_state['insert_start_widget_counter'] += 1
+    st.session_state['insert_end_widget_counter'] += 1
 
 ## function to insert start and end number_input widgets
 def interval_pages_widgets(pdf_file_length):
@@ -123,11 +130,11 @@ if pdf_action:
     if st.toggle('Show function description'):
         st.write(function_docstring)
 
-
+    action_button_clicked = False
 ## SHOW UPLOAD, START AND END PAGES WIDGETS
 if pdf_action:
 
-    ## EXTRACT, REMOVE, REARRANGE ACTIONS
+    # --- UI Rendering Block ---
     if action in ['extract', 'remove', 'rearrange']:
 
         # only one file was uploaded
@@ -144,6 +151,9 @@ if pdf_action:
                 st.write(f'Select interval of pages to be {action}ed.')
 
             start, end = interval_pages_widgets(pdf_file_length)
+
+            if start > end:
+                st.warning("Warning: Start page should be less than or equal to the end page.")
             
             ## REARRANGE INSERT AND RELATIVE POSITION
             if action == 'rearrange':
@@ -180,27 +190,9 @@ if pdf_action:
                         st.warning(f"Your selected operation does not alter the page order. PDF file will not be processed. \
                                 \n\nInsertion page should be before page {start - 1} or after page {end+1}.")
 
-            ## RESET AND PERFORM ACTION BUTTONS
-            col1, col2, col3 = st.columns([1, 1, 2])
-
-            # RESET BUTTON
-            with col1:
-                if st.button('Reset operation'):
-                    reset(rerun = True)
-            
-            # RESET ONLY PAGES SELECTOR BUTTON
-            with col2:
-                if st.button('Reset pages'):
-                    reset_start_end()
-            
-            ## ACTION BUTTON
-            with col3:
-                button_label = f"{action.capitalize()} files" if action == 'merge' else f"{action.capitalize()} pages"
-                action_button_clicked = st.button(button_label)
-                    
-    ## INSERT ACTION
-    if action == 'insert':
-        source_file = st.file_uploader("Select the source PDF file...", type=['pdf'])
+    elif action == 'insert':
+        source_file = st.file_uploader("Select the source PDF file...", type=['pdf'],
+                                       key = f"uploader_source_{st.session_state['uploader_key_counter']}")
     
         insertion_files = st.file_uploader("Select one or more PDF files to insert...", type=['pdf'],
                             key = f"multi_uploader_key_{st.session_state['multi_uploader_key_counter']}",
@@ -211,8 +203,19 @@ if pdf_action:
             # get length of source file
             source_length = len(PdfReader(source_file).pages)
 
+            # each interval of pages from insertion files must
+            # fulfill that start <= end
+            # I will create a list of interval_ok
+            interval_ok_list = []
+
             # for each of the insertion files, show start and end pages widget
             for index, ins_file in enumerate(insertion_files):
+                
+                # Initialize counter dictionary if it's not already one
+                if isinstance(st.session_state.insert_widget_counters, int):
+                    st.session_state.insert_widget_counters = {}
+                if index not in st.session_state.insert_widget_counters:
+                    st.session_state.insert_widget_counters[index] = 0
 
                 st.subheader(f"\nSelect page to insert file number {index + 1}")
 
@@ -225,102 +228,101 @@ if pdf_action:
                 # relative position
                 with col1:
                     relative_pos = st.radio("Relative position", ('before', 'after'),
-                                            key = f'relative_pos_radio_{index}')
+                                            key = f'relative_pos_{index}')
 
                 # insert page
                 with col2:
                     insert_pos = st.number_input(label = 'Insert position', min_value = 1,
                                                     max_value=source_length, step = 1, value = 1,
-                                                    key = f'insert_pos_radio_{index}')
+                                                    key = f'insert_pos_{index}')
                 
                 # start and end pages widgets
                 st.write("Optional: Select a range of pages to insert from the insertion file.")
 
                 col1, col2 = st.columns(2)
+            
                 with col1:
                     start = st.number_input(label = 'Start page', min_value = 1, max_value= inserted_length,
-                                            value = 1, step = 1,
-                                            key = f"start_key_{index}")
+                                            value = 1, step = 1, key=f"start_key_{index}_{st.session_state.insert_widget_counters[index]}")
                 with col2:
                     end = st.number_input(label = 'End page', min_value = 1,
-                                            max_value = inserted_length, step = 1, value = 1,
-                                            key = f"end_key_{index}")
-
-            ## RESET AND PERFORM ACTION BUTTONS
-            col1, col2, col3 = st.columns([1, 1, 2])
-
-            # RESET BUTTON
-            with col1:
-                if st.button('Reset operation'):
-                    reset(rerun = True)
-            
-            # RESET ONLY PAGES SELECTOR BUTTON
-            with col2:
-                if st.button('Reset pages'):
-                    reset_start_end()
-            
-            ## ACTION BUTTON
-            with col3:
-                button_label = f"{action.capitalize()} files" if action == 'merge' else f"{action.capitalize()} pages"
-                action_button_clicked = st.button(button_label)
-
-    # if action == 'merge':
-    #     uploaded_files = upload_several_files()
-
-            ## ONCE ACTION BUTTON IS CLICKED
-            if action_button_clicked:
-            
-                ## EXTRACT, REMOVE, REARRANGE, INSERT
-
-                # check if interval of pages is ok
-                if action != 'insert':
-                    # check in all cases that end page is >= start page
-                    interval_ok = end >= start
-
-                try:
-                    if action in ['extract', 'remove']:
-                        if interval_ok:
-                            output_buffer, output_filename = function(uploaded_file, start, end)
-                    
-                    # elif action == 'merge':
-                    #     output_buffer, output_filenames = function(uploaded_files)
-                    
-                    elif action == 'rearrange':
-                        if interval_ok:
-                            
-                            # check if the output file would be same as input file
-                            # read comments above
-                            same_file_warning = ( new_pos in range(start, end+1) or \
-                                                    (relative_pos == 'after' and start == new_pos + 1) )
-                            
-                            if not same_file_warning:
-                                output_buffer, output_filename = function(uploaded_file, start, end, relative_pos, new_pos)
-                            elif same_file_warning:
-                                interval_ok = False
-                    
-                    elif action == 'insert':
-                        if interval_ok and insertion_files:
-                            output_buffer, output_filename = function(source_file, insertion_files,
-                                                                        insert_pos, relative_pos,
-                                                                        start, end)
-
-                    with col3:
-                        if interval_ok and action != 'insert':
-                            st.download_button(f"Download {action}d file", output_buffer.getvalue(), output_filename, "application/pdf")
-                        
-                except Exception as e:
-                    st.warning(f'Error: {e}')
-
-
-                if (end < start) and action != 'insert':
+                                            max_value = inserted_length, step = 1, value = 1, key=f"end_key_{index}_{st.session_state.insert_widget_counters[index]}")
+                
+                if st.button('Reset pages', key = f"reset_pages_{index}"):
+                    st.session_state.insert_widget_counters[index] += 1
+                    st.rerun()
+                
+                if (end < start):
                         st.warning('Please, increase end page value to be equal or greater than start page value.')
-                
-                elif action_button_clicked and (start > end):
-                    st.error('Error: end page lower than start page. Action canceled')
-                
-                elif action_button_clicked and action == "rearrange" and same_file_warning:
-                    st.warning('Action canceled. Observe warning message above.')
+                else:
+                    interval_ok_list.append(True)
 
-                if action_button_clicked and (start <= end) and not same_file_warning:
-                    st.success('Processed file ready to be downloaded!')
-    
+    # --- Unified Button and Processing Block ---
+    col1, col2, col3 = st.columns([1, 1, 2])
+    with col1:
+        if st.button('Reset operation'):
+            reset(rerun=True)
+    with col2:
+        if action in ['extract', 'remove', 'rearrange']:
+            if st.button('Reset pages'):
+                reset_start_end()
+    with col3:
+        # Only show the action button if the necessary files are uploaded
+        if (action != 'insert' and 'uploaded_file' in locals() and uploaded_file) or \
+           (action == 'insert' and 'source_file' in locals() and source_file and insertion_files):
+            button_label = f"{action.capitalize()} pages"
+            action_button_clicked = st.button(button_label)
+
+    if action_button_clicked:
+        try:
+            output_buffer, output_filename = None, None
+            if action in ['extract', 'remove']:
+                if end >= start:
+                    output_buffer, output_filename = function(uploaded_file, start, end)
+                else:
+                    st.error('Error: End page must be greater than or equal to start page.')
+            
+            elif action == 'rearrange':
+                if end >= start and not same_file_warning:
+                    output_buffer, output_filename = function(uploaded_file, start, end, relative_pos, new_pos)
+                elif same_file_warning:
+                    st.warning('Action canceled. The selected operation does not alter the page order.')
+                else:
+                    st.error('Error: End page must be greater than or equal to start page.')
+            
+            elif action == 'insert':
+                if all(interval_ok_list):
+                    # Start with a list of all pages from the source file
+                    final_pages = list(PdfReader(source_file).pages)
+
+                    for index, ins_file in enumerate(insertion_files):
+                        current_relative_pos = st.session_state[f'relative_pos_{index}']
+                        current_insert_pos = st.session_state[f'insert_pos_{index}']
+                        counter = st.session_state.insert_widget_counters[index]
+                        current_start = st.session_state[f'start_key_{index}_{counter}']
+                        current_end = st.session_state[f'end_key_{index}_{counter}']
+                        
+                        # Get the list of pages to insert
+                        pages_to_insert = function(ins_file, current_start, current_end)
+                        
+                        # Calculate insertion position and insert the block
+                        insertion_point = current_insert_pos - 1 if current_relative_pos == 'before' else current_insert_pos
+                        final_pages[insertion_point:insertion_point] = pages_to_insert
+
+                    # Now, create the writer and add the final ordered pages
+                    writer = PdfWriter()
+                    for page in final_pages:
+                        writer.add_page(page)
+                    output_buffer = io.BytesIO()
+                    writer.write(output_buffer)
+                    output_filename = f"{Path(source_file.name).stem}_expanded.pdf"
+                else:
+                    st.error("Action canceled. Please check that all 'end' pages are greater than or equal to their 'start' pages.")
+
+            # --- Unified Download Button ---
+            if output_buffer and output_filename:
+                st.download_button(f"Download {action}d file", output_buffer.getvalue(), output_filename, "application/pdf")
+                st.success('Processed file ready to be downloaded!')
+
+        except Exception as e:
+            st.error(f'An unexpected error occurred: {e}')
