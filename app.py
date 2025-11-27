@@ -1,8 +1,7 @@
 import streamlit as st
-import tempfile
-import os
 import io
 from pathlib import Path
+#import base64
 
 from PyPDF2 import PdfReader, PdfWriter
 
@@ -12,10 +11,34 @@ from scripts.merge_files        import merge_files
 from scripts.rearrange_pages    import rearrange_pages
 from scripts.remove_pages       import remove_pages
 
+# ## SET BACKGROUND IMAGE
+
+# def get_base64_of_bin_file(bin_file):
+#     with open(bin_file, 'rb') as f:
+#         data = f.read()
+#     return base64.b64encode(data).decode()
+
+# def set_background_image(image_path):
+#     bin_str = get_base64_of_bin_file(image_path)
+#     # The selector '.stApp' or '[data-testid="stAppViewContainer"]' works for the main app body
+#     page_bg_img = f"""
+#     <style>
+#     .stApp {{
+#         background-image: url("data:image/png;base64,{bin_str}");
+#         background-size: cover;
+#     }}
+#     </style>
+#     """
+#     st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# # Example usage: Make sure 'my_background.png' is in your script's directory
+# # set_background_image("./assets/background_faded.png")
+
+
 st.title('PDF Editor')
 
 st.sidebar.markdown('# Choose an action')
-st.sidebar.subheader('Select an action from the list below to perform on a pdf file')
+#st.sidebar.subheader('Select an action from the list below to perform on a pdf file')
 
 PDF_ACTIONS = {
     "extract": {
@@ -76,10 +99,6 @@ def reset_start_end():
     st.session_state['end_widget_counter'] += 1
     st.rerun()
 
-def reset_start_end_insert_pages():
-    st.session_state['insert_start_widget_counter'] += 1
-    st.session_state['insert_end_widget_counter'] += 1
-
 ## function to insert start and end number_input widgets
 def interval_pages_widgets(pdf_file_length):
     col1, col2 = st.columns(2)
@@ -98,7 +117,7 @@ def interval_pages_widgets(pdf_file_length):
 
 
 # SIDEBAR MENU
-pdf_action = st.sidebar.radio("Actions available:",
+pdf_action = st.sidebar.radio(label = "",
         options = [f"{action['label']} {action['icon']}" for action in PDF_ACTIONS.values()],
         captions = [action['caption'] for action in PDF_ACTIONS.values()],
         key = 'action_active',
@@ -275,6 +294,15 @@ if pdf_action:
                 else:
                     interval_check_list.append(True)
 
+    ## MERGE UI
+    elif action == 'merge':
+        st.subheader("Upload files to merge ...")
+        files_to_merge = st.file_uploader("Select two or more PDF files to combine.", type=['pdf'],
+                                          key=f"multi_uploader_key_{st.session_state['multi_uploader_key_counter']}",
+                                          accept_multiple_files=True)
+        if files_to_merge and len(files_to_merge) < 2:
+            st.warning("Please upload at least two files to merge.")
+
     ## BUTTONS FOR RESET OR PROCESS ACTION
     col1, col2, col3 = st.columns([1, 1, 2])
     with col1:
@@ -287,7 +315,8 @@ if pdf_action:
     with col3:
         # show action button ONLY if necessary files have been uploaded
         if (action != 'insert' and 'uploaded_file' in locals() and uploaded_file) or \
-           (action == 'insert' and 'source_file' in locals() and main_file and additional_files):
+           (action == 'insert' and 'main_file' in locals() and main_file and additional_files) or \
+           (action == 'merge' and 'files_to_merge' in locals() and files_to_merge and len(files_to_merge) >= 2):
             button_label = f"{action.capitalize()} pages"
             action_button_clicked = st.button(button_label)
 
@@ -347,6 +376,10 @@ if pdf_action:
                     output_filename = f"{Path(smain_file.name).stem}_expanded.pdf"
                 else:
                     st.error("Action canceled. Please check that end page value is greater than or equal to start page value for all additional files.")
+
+            elif action == 'merge':
+                if files_to_merge and len(files_to_merge) >= 2:
+                    output_buffer, output_filename = function(files_to_merge)
 
             # --- Unified Download Button ---
             if output_buffer and output_filename:

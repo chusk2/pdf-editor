@@ -1,0 +1,25 @@
+# Save this file as .streamlit/config.toml (when using Light Mode)
+
+[theme]
+# Base setting for a light theme
+base = "light"
+
+# 60% - Main Window/App Background (Paper-like white)
+backgroundColor = "#F9FAFB" 
+
+# 30% - Secondary Background (Sidebar, Code Blocks, Widgets)
+secondaryBackgroundColor = "#EBECEF" 
+
+# Primary accent color (Blue for professionalism/trust)
+primaryColor = "#007BFF" 
+
+# Text color (Soft near-black for better readability)
+#textColor = "#1C1C1C"
+textColor = "#191923"
+# Font (Optional: Use Streamlit's default or specify 'sans serif', 'serif', or 'monospace')
+# font = "sans serif"
+
+# --- Sidebar Specific Override ---
+[theme.sidebar]
+# Ensures the sidebar background is the desired neutral gray
+backgroundColor = "#EBECEF"
