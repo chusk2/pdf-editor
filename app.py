@@ -35,7 +35,7 @@ from scripts.remove_pages       import remove_pages
 # # set_background_image("./assets/background_faded.png")
 
 
-st.title('PDF Editor')
+st.title('PDF Editor - v.1.0')
 
 st.sidebar.markdown('# Choose an action')
 #st.sidebar.subheader('Select an action from the list below to perform on a pdf file')

@@ -1,57 +1,116 @@
-# 📚 PDF Pages Extractor App
+# 📄 PDF Editor
 
-This repository contains a simple web application built with **Streamlit** that allows users to upload a PDF file, select a range of pages to extract, and download the resulting sub-document as a new PDF file.
+A versatile and user-friendly web application built with **Streamlit** that allows you to perform various operations on your PDF files.
 
 ## ✨ Features
 
-  * **User-Friendly Interface:** Intuitive web interface powered by Streamlit.
-  * **Simple Upload:** Drag-and-drop or browse functionality for PDF files.
-  * **Page Range Selection:** Uses number inputs to easily specify the start and end pages for extraction.
-  * **Efficient Processing:** Utilizes the robust `PyPDF2` library for fast page manipulation.
-  * **Direct Download:** Allows instant download of the extracted PDF file.
+This application provides the following PDF manipulation tools:
 
-## ⚙️ How to Run Locally
+*   **✂️ Extract:** extract a range of pages from a PDF file.
+*   **➕ Insert:** insert pages from one or more PDF files into a main PDF file.
+*   **🔗 Merge:** concatenate several PDF files into a single, merged PDF file.
+*   **🔄 Rearrange:** rearrange the pages of a PDF file.
+*   **🗑️ Remove:** remove a range of pages from a PDF file.
 
-### Prerequisites
+## 🚀 How to Use
 
-You need **Python 3.x** and `pip` installed on your system.
+1.  **Choose an action:** select one of the available actions from the sidebar menu.
+2.  **Upload your file(s):** use the file uploader to select the PDF file(s) you want to process.
+3.  **Set parameters:** depending on the selected action, you may need to specify page ranges or other options.
+4.  **Process and download:** dlick the action button (e.g., "Extract pages") to process the file(s). Once processed, a download button will appear for you to save your new PDF.
 
-### 1\. Clone the Repository
+### Action-Specific Instructions
 
-```bash
-git clone https://github.com/chusk2/pdf_pages_extractor.git
-cd pdf_pages_extractor
-```
+*   **Extract, Remove, and Rearrange:**
+    1.  Upload a single PDF file.
+    2.  Specify the 'Start page' and 'End page' for the range of pages you want to affect.
+    3.  For rearranging, you'll also need to specify the new position for the selected pages.
+*   **Insert:**
+    1.  Upload the main PDF file you want to insert pages into.
+    2.  Upload one or more additional PDF files containing the pages to be inserted.
+    3.  For each additional file, specify the insertion position in the main file and, optionally, a specific range of pages to insert from the additional file.
+*   **Merge:**
+    1.  Upload two or more PDF files that you want to combine.
+    2.  The files will be merged in the order they are listed.
 
-### 2\. Install Dependencies
+## 💻 Deployment
 
-The application requires the `streamlit` and `PyPDF2` libraries.
+You can run this application on your local machine or deploy it to a cloud platform that supports Python applications.
 
-```bash
-pip install streamlit PyPDF2
-```
+### 🏠 Local Deployment
 
-### 3\. Run the App
+**Prerequisites:**
+*   Python 3.7+
+*   pip (Python package installer)
 
-Execute the Streamlit command to launch the web application:
+**Linux / macOS:**
 
-```bash
-streamlit run pdf_pages_extractor.py
-```
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/chusk2/pdf-editor.git
+    cd pdf-editor
+    ```
+2.  **Create a virtual environment (recommended):**
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+3.  **Install the dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+4.  **Run the application:**
+    ```bash
+    streamlit run app.py
+    ```
 
-This command will automatically open a browser window displaying the application (usually at `http://localhost:8501`).
+**Windows:**
 
-## 🖥️ Application Workflow
+For the simplest setup on Windows, you can use the provided batch script which automates the entire process.
 
-1.  **Upload:** The user uploads a PDF file using the file uploader widget.
-2.  **Input:** The app calculates the total number of pages and presents two dynamic **number input** fields constrained by the document's length for selecting the start and end pages.
-3.  **Extraction:** Upon clicking the **'Extract Pages'** button, the script uses `PyPDF2.PdfReader` to read the input and `PyPDF2.PdfWriter` to create the new document, copying the specified page range.
-4.  **Download:** The resulting PDF is held in memory using `io.BytesIO` and made available for the user via a **Download button**.
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/chusk2/pdf-editor.git
+    cd pdf-editor
+    ```
+2.  **Run the launcher script:**
+    Simply double-click on the `run_app.bat` file.
 
-## 🤝 Contributing
+    The script will automatically:
+    *   Check for a valid Python installation.
+    *   Create a local virtual environment (`venv`).
+    *   Install all required dependencies.
+    *   Launch the PDF Editor application in your web browser.
 
-Contributions are welcome\! Feel free to open an issue or submit a pull request if you find a bug or want to add a feature (e.g., extracting non-consecutive pages).
+    ***
 
-## 👤 Author
+    <details>
+    <summary><b>Manual Installation (for advanced users)</b></summary>
 
-[**danicoder**](https://github.com/chusk2)
+    1.  **Clone the repository:**
+        ```bash
+        git clone https://github.com/chusk2/pdf-editor.git
+        cd pdf-editor
+        ```
+    2.  **Create a virtual environment (recommended):**
+        ```bash
+        python -m venv venv
+        venv\Scripts\activate
+        ```
+    3.  **Install the dependencies:**
+        ```bash
+        pip install -r requirements.txt
+        ```
+    4.  **Run the application:**
+        ```bash
+        streamlit run app.py
+        ```
+    </details>
+
+### ☁️ Cloud Deployment (e.g., Streamlit Cloud)
+
+1.  **Fork this repository** to your GitHub account.
+2.  **Sign up for Streamlit Cloud:** Go to [share.streamlit.io](https://share.streamlit.io) and sign up.
+3.  **Deploy the app:** Click "New app" and choose the forked repository. Streamlit Cloud will automatically detect the `requirements.txt` file and deploy the application.
+
+> This project was created by a self-taught junior developer with a passion for data and web development. With a background in SQL, R, and Python, and experience with data science tools like NumPy, Pandas, and Matplotlib, this project is an exploration into building practical web applications with Streamlit.
