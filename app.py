@@ -132,23 +132,38 @@ def upload_single_file():
 ## Generate and Display Action Description
 if pdf_action:
     action = pdf_action[:-2].split(' ')[0].lower()
+    # get the function corresponding to the selected action
+    function = functions[action]
     action_description = PDF_ACTIONS[action]['caption'].capitalize()
     st.header(action_description)
 
-    function = functions[action]
-    function_docstring_lines = function.__doc__.split('\n')
-    function_docstring = ''
-    for line in function_docstring_lines:
-        line = line.strip()
-        if not line.startswith('Args:'):
-            function_docstring += f'{line}\n'
-        else:
-            function_docstring = function_docstring.strip()
-            break
-    
     # Show the action description toggle
-    if st.toggle('Show function description'):
-        st.write(function_docstring)
+    if st.toggle('Show help about this action'):
+        if action == 'insert':
+            insert_action_docstring = """
+            This action inserts pages from one or more PDF files into a main PDF file.
+
+            This action allows you to take pages from other PDF documents and add them
+            to a primary document. First, upload your main PDF. Then, upload one or
+            more additional PDFs that contain the pages you want to insert.
+
+            For each additional file, you can specify the exact position in the main
+            file where the new pages should be placed (e.g., 'before' page 5). You can
+            also select a specific page range from the additional file to insert. 
+            By default, all pages from the additional file will be inserted.
+            """
+            st.write(insert_action_docstring)
+        else:
+            function_docstring_lines = function.__doc__.split('\n')
+            function_docstring = ''
+            for line in function_docstring_lines:
+                line = line.strip()
+                if not line.startswith('Args:'):
+                    function_docstring += f'{line}\n'
+                else:
+                    function_docstring = function_docstring.strip()
+                    break
+            st.write(function_docstring)
 
     action_button_clicked = False
 
@@ -207,13 +222,11 @@ if pdf_action:
                         end == 1 and \
                         new_pos == 2:
                         
-                        st.warning(f"Pages should be inserted after page {new_pos}. \
-                                \n\nThis operation does not alter the page order. \
+                        st.warning(f"This operation does not alter the page order. \
                                    The PDF file will not be processed.")
                     
                     else:
-                        st.warning(f"Pages should be inserted before page {start - 1} or after page {end+1}. \
-                                   \n\nThese parameters do not alter the page order.\
+                        st.warning("These parameters do not alter the page order.\
                                    The PDF file will not be processed.")
 
     ## INSERT UI
@@ -249,7 +262,8 @@ if pdf_action:
                 if index not in st.session_state.insert_widget_counters:
                     st.session_state.insert_widget_counters[index] = 0
 
-                st.subheader(f"\nSelect page where additional file {index + 1} will be inserted.")
+                st.subheader(f"\nSelect page where file {index + 1 } will be inserted.")
+                st.markdown(f"**File to be inserted:** {add_file.name[:-4]}")
 
                 # Get length of the file to be inserted
                 add_file_length = len(PdfReader(add_file).pages)
@@ -278,7 +292,7 @@ if pdf_action:
                                             value = 1, step = 1, key=f"start_key_{index}_{st.session_state.insert_widget_counters[index]}")
                 with col2:
                     end = st.number_input(label = 'End page', min_value = 1,
-                                            max_value = add_file_length, step = 1, value = 1, key=f"end_key_{index}_{st.session_state.insert_widget_counters[index]}")
+                                            max_value = add_file_length, step = 1, value = add_file_length, key=f"end_key_{index}_{st.session_state.insert_widget_counters[index]}")
                 
                 if st.button('Reset page values', key = f"reset_pages_{index}"):
                     st.session_state.insert_widget_counters[index] += 1
@@ -357,7 +371,7 @@ if pdf_action:
                         current_end = st.session_state[f'end_key_{index}_{counter}']
                         
                         # Get the list of pages to insert
-                        pages_to_insert = function(additional_files, current_start, current_end)
+                        pages_to_insert = function(ins_file, current_start, current_end)
                         
                         # Calculate insertion position and insert the block
                         insertion_point = current_insert_pos - 1 if current_relative_pos == 'before' else current_insert_pos
@@ -369,7 +383,7 @@ if pdf_action:
                         writer.add_page(page)
                     output_buffer = io.BytesIO()
                     writer.write(output_buffer)
-                    output_filename = f"{Path(smain_file.name).stem}_expanded.pdf"
+                    output_filename = f"{Path(main_file.name).stem}_expanded.pdf"
                 else:
                     st.error("Action canceled. Please ensure the 'End page' is greater than or equal to the 'Start page' for all additional files.")
 
@@ -379,7 +393,7 @@ if pdf_action:
 
             # --- Unified Download Button ---
             if output_buffer and output_filename:
-                st.download_button(f"Download {action}d file", output_buffer.getvalue(), output_filename, "application/pdf")
+                st.download_button("Download processed file", output_buffer.getvalue(), output_filename, "application/pdf")
                 st.success('File processed successfully! It is now ready for download.')
 
         except Exception as e:

@@ -1,0 +1,9 @@
+OK
+- Extract pages
+- Remove pages
+- Rearrange pages
+- Insert pages
+
+TO BE TESTED
+
+- Reset interval in rearrange resets start and end but not insert pos

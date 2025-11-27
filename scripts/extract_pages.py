@@ -9,9 +9,9 @@ from PyPDF2 import PdfReader, PdfWriter
 
 def extract_pages(file, start: int, end: int):
     """
-    Extracts a range of pages from a PDF and saves them as a new file.
+    This action extracts a range of pages from a PDF and saves them as a new file.
 
-    Select a starting and an ending page from your PDF to create a new, smaller
+    Select the start and end pages of an interval from your PDF to create a new, smaller
     PDF containing only the pages within that range (inclusive).
 
     For example, if you choose start=3 and end=5, the new PDF will contain
